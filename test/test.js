@@ -4,21 +4,45 @@ var fs = require('fs');
 var cases = JSON.parse(fs.readFileSync('./test/examples.json'));
 
 describe('marsha', function() {
-  it('expects 4.8 as the initial bytes', function() {
-    assert.throws(function() {
-      marsha.load('');
-    }, /input is not in marshal 4\.8 format/i, 'input with invalid leading bytes should throw')
-  });
-
-  Object.keys(cases).forEach(function(base64) {
-    it('unserializes "' + base64 + '" to ' + JSON.stringify(cases[base64]), function() {
-      var buffer = new Buffer(base64, 'base64');
-      assert.deepEqual(marsha.load(buffer), cases[base64]);
+  describe('.load', function() {
+    it('expects 4.8 as the initial bytes', function() {
+      assert.throws(function() {
+        marsha.load(new Buffer('FFFF', 'hex'));
+      }, /input is not in marshal 4\.8 format/i, 'input with invalid leading bytes should throw');
     });
 
-    it('serializes "' + JSON.stringify(cases[base64]) + '" to ' + base64, function() {
-      var buffer = marsha.dump(cases[base64]);
-      assert.equal(buffer.toString('base64'), base64);
+    it('allows input to be a string if an encoding is specified', function() {
+      assert.strictEqual(marsha.load('BAhU', 'base64'), true);
+    });
+
+    it('throws an exception if given a string with no encoding', function() {
+      assert.throws(function() {
+        marsha.load('BAhU');
+      }, /A second "encoding" argument is expected if the first argument is not a buffer/i, 'input with invalid leading bytes should throw')
+    });
+
+    Object.keys(cases).forEach(function(hex) {
+      it('unserializes ' + hex + ' to ' + JSON.stringify(cases[hex]), function() {
+        var buffer = new Buffer(hex, 'hex');
+        assert.deepEqual(marsha.load(buffer), cases[hex]);
+      });
+    });
+  });
+
+  describe('.dump', function() {
+    it('returns a buffer', function() {
+      assert.ok(marsha.dump('BAhU') instanceof Buffer);
+    });
+
+    it('outputs a string if an encoding is specified', function() {
+      assert.strictEqual(marsha.dump(true, 'base64'), 'BAhU');
+    });
+
+    Object.keys(cases).forEach(function(hex) {
+      it('serializes ' + JSON.stringify(cases[hex]) + ' to ' + hex, function() {
+        var buffer = marsha.dump(cases[hex]);
+        assert.equal(buffer.toString('hex'), hex);
+      });
     });
   });
 });
