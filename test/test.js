@@ -1,7 +1,8 @@
 var marsha = require('../');
 var assert = require('assert');
 var fs = require('fs');
-var cases = JSON.parse(fs.readFileSync('./test/examples.json'));
+var cases = JSON.parse(fs.readFileSync('./test/bidirectional_examples.json'));
+var complexCases = JSON.parse(fs.readFileSync('./test/other_examples.json'));
 
 describe('marsha', function() {
   describe('.load', function() {
@@ -27,6 +28,13 @@ describe('marsha', function() {
         assert.deepEqual(marsha.load(buffer), cases[hex]);
       });
     });
+
+    complexCases.forEach(function(testCase) {
+      it('unserializes ' + testCase.rbin + ' to ' + JSON.stringify(testCase.node), function() {
+        var buffer = new Buffer(testCase.rbin, 'hex');
+        assert.deepEqual(marsha.load(buffer), testCase.node);
+      });
+    });
   });
 
   describe('.dump', function() {
@@ -42,6 +50,12 @@ describe('marsha', function() {
       it('serializes ' + JSON.stringify(cases[hex]) + ' to ' + hex, function() {
         var buffer = marsha.dump(cases[hex]);
         assert.equal(buffer.toString('hex'), hex);
+      });
+    });
+
+    complexCases.forEach(function(testCase) {
+      xit('serializes ' + JSON.stringify(testCase.node) + ' to ' + testCase.rbout, function() {
+        
       });
     });
   });

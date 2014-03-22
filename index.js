@@ -3,6 +3,7 @@ var MARSHAL_FALSE = 'F'.charCodeAt(0);
 var MARSHAL_NULL = '0'.charCodeAt(0);
 var MARSHAL_ARRAY = '['.charCodeAt(0);
 var MARSHAL_INT = 'i'.charCodeAt(0);
+var MARSHAL_SYM = ':'.charCodeAt(0);
 
 var ints = require('./lib/ints');
 
@@ -27,6 +28,10 @@ var _parse = function(buffer) {
         var slice = buffer.slice(offset + 1, offset + 1 + length);
         offset += length + 1;
         return ints.load(slice);
+      case MARSHAL_SYM:
+        var length = ints.load(buffer.slice(offset + 1, offset + 2));
+        var tempBuf = buffer.slice(offset + 2, offset + 2 + length);
+        return tempBuf.toString('utf8');
       case MARSHAL_ARRAY:
         var tokensExpected = ints.load(buffer.slice(offset + 1, offset + 2));
         var elements = [];
