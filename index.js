@@ -25,7 +25,7 @@ var _parse = function(buffer) {
       case MARSHAL_INT:
         var length = ints.length(buffer[offset + 1]);
         var slice = buffer.slice(offset + 1, offset + 1 + length);
-        offset += length;
+        offset += length + 1;
         return ints.load(slice);
       case MARSHAL_ARRAY:
         var tokensExpected = ints.load(buffer.slice(offset + 1, offset + 2));
@@ -35,34 +35,14 @@ var _parse = function(buffer) {
           elements.push(_identifyNextToken());
         }
         return elements;
+      default:
+        throw new Error('Unexpected item in bagging area, offset ' + offset + ' on ' + buffer);
     }
 
     return output;
   }
 
   return _identifyNextToken();
-
-  if(buffer[offset] === MARSHAL_TRUE) {
-    return _identifyNextToken(buffer, offset + 1, true);
-  } else if(buffer[offset] === MARSHAL_FALSE) {
-    return _identifyNextToken(buffer, offset + 1, false);
-  } else if(buffer[offset] === MARSHAL_NULL) {
-    return _identifyNextToken(buffer, offset + 1, null);
-  } else if(buffer[offset] === MARSHAL_INT) {
-    var slice = ints.identifySlice(buffer, offset + 1);
-    var value = ints.load(slice);
-    return _identifyNextToken(buffer, offset + 1 + slice.length, value);
-  } else if(buffer[offset] === MARSHAL_ARRAY) {
-    var tokensExpected = ints.load(buffer.slice(offset + 1, offset + 2));
-    var elements = [];
-    for(var i = 0; i < tokensExpected; i++) {
-      elements.push(_identifyNextToken(buffer, offset + 2));
-    }
-    return _identifyNextToken(buffer, buffer.length, elements);
-  } else {
-    console.error(buffer, offset)
-    throw new Error('i dont know what this is')
-  }
 };
 
 var _dumpValue = function(value) {
