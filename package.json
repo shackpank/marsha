@@ -1,0 +1,21 @@
+{
+  "name": "marsha",
+  "version": "0.0.0",
+  "description": "Parser/serializer for Ruby's marshal format",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha"
+  },
+  "repository": "",
+  "keywords": [
+    "marshal",
+    "ruby",
+    "serialize",
+    "unserialize"
+  ],
+  "devDependencies": {
+    "mocha": "1.18.2"
+  },
+  "author": "Ollie Buck",
+  "license": "BSD"
+}
