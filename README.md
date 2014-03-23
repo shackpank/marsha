@@ -19,7 +19,7 @@ Or you can provide a string and an encoding, a buffer will be created internally
 marsha.load('BAhbCGkGaQdpCA==', 'base64'); // returns [ 1, 2, 3 ]
 ```
 
-The JS representation of the marshaled data will be returned, or an exception will be thrown if it's not usable. Marshal can serialize a wide variety of Ruby objects including instances of builtin and user defined classes, which may not have a JS equivalent.
+The JS representation of the marshaled data will be returned, or an exception will be thrown if it's not usable. Marshal can serialize a wide variety of Ruby objects including instances of builtin and user defined classes, which may not have a JS equivalent. `:symbol`s are treated as strings.
 
 Writing is similar to reading, returns a buffer if called with one argument:
 

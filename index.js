@@ -4,11 +4,16 @@ var MARSHAL_NULL = '0'.charCodeAt(0);
 var MARSHAL_ARRAY = '['.charCodeAt(0);
 var MARSHAL_INT = 'i'.charCodeAt(0);
 var MARSHAL_SYM = ':'.charCodeAt(0);
+var MARSHAL_SYM_REF = ';'.charCodeAt(0);
+var MARSHAL_INSTANCEVAR = 'I'.charCodeAt(0);
+var MARSHAL_IVAR_STR = '"'.charCodeAt(0);
+var MARSHAL_FLOAT = 'f'.charCodeAt(0);
 
 var ints = require('./lib/ints');
 
 var _parse = function(buffer) {
   var offset = 0;
+  var symbols = [];
 
   var _identifyNextToken = function() {
     var output;
@@ -28,10 +33,35 @@ var _parse = function(buffer) {
         var slice = buffer.slice(offset + 1, offset + 1 + length);
         offset += length + 1;
         return ints.load(slice);
+      case MARSHAL_FLOAT:
+        var length = ints.load(buffer.slice(offset + 1, offset + 2));
+        var tempBuf = buffer.slice(offset + 2, offset + 2 + length);
+        offset += length + 2;
+        if(tempBuf.toString('utf8') === 'inf') return Infinity;
+        if(tempBuf.toString('utf8') === '-inf') return -Infinity;
+        return parseFloat(tempBuf.toString('utf8'));
       case MARSHAL_SYM:
         var length = ints.load(buffer.slice(offset + 1, offset + 2));
         var tempBuf = buffer.slice(offset + 2, offset + 2 + length);
-        return tempBuf.toString('utf8');
+        offset += length + 2;
+        var sym = tempBuf.toString('utf8');
+        symbols.push(sym);
+        return sym;
+      case MARSHAL_SYM_REF:
+        var index = ints.load(buffer.slice(offset + 1, offset + 2));
+        offset += 2;
+        return symbols[index];
+      case MARSHAL_INSTANCEVAR:
+        var ivarType = buffer[offset + 1];
+        switch(ivarType) {
+          case MARSHAL_IVAR_STR:
+            var length = ints.load(buffer.slice(offset + 2, offset + 3));
+            var tempBuf = buffer.slice(offset + 3, offset + 3 + length);
+            return tempBuf.toString('utf8');
+          default:
+            throw new Error('Encountered some weird shit, bailing');
+        }
+        throw new Error(ivarType);
       case MARSHAL_ARRAY:
         var tokensExpected = ints.load(buffer.slice(offset + 1, offset + 2));
         var elements = [];
@@ -50,30 +80,80 @@ var _parse = function(buffer) {
   return _identifyNextToken();
 };
 
-var _dumpValue = function(value) {
+var _dump = function(value) {
+  // The first time a string is output it includes a symbol;
+  // the second string output needs to refer back to that
+  // symbol rather than outputing it again.
+  var stringEncodingOffset;
 
-  if(value === true) return new Buffer([MARSHAL_TRUE]);
-  if(value === false) return new Buffer([MARSHAL_FALSE]);
+  var _dumpValue = function(value) {
+    var _ivar = function(type, value) {
+      var trail;
 
-  if(typeof value === 'number') {
-    return Buffer.concat([
-      new Buffer([MARSHAL_INT]), ints.dump(value)
-    ]);
-  }
+      if(stringEncodingOffset) {
+        trail = new Buffer([6, MARSHAL_SYM_REF, 00, 84]);
+      } else {
+        trail = new Buffer([6, MARSHAL_SYM, 06, 69, 84]);
+        stringEncodingOffset = true;
+      }
 
-  if(Array.isArray(value)) {
-    return Buffer.concat(
-      [ new Buffer([MARSHAL_ARRAY]),
-        ints.dump(value.length)
-      ].concat(
-        value.map(function(item) {
-          return _dumpValue(item);
-        })
-      )
-    );
-  }
+      return Buffer.concat([
+        new Buffer([MARSHAL_INSTANCEVAR]),
+        new Buffer([type]),
+        new Buffer([value.length + 5]),
+        new Buffer(value, 'utf8'),
+        trail
+      ]);
+    };
 
-  return new Buffer([MARSHAL_NULL]);
+    if(value === true) return new Buffer([MARSHAL_TRUE]);
+    if(value === false) return new Buffer([MARSHAL_FALSE]);
+
+    if(typeof value === 'number') {
+      if(value === Math.round(value)) {
+        if(value === Infinity) {
+          var str = 'inf';
+          return Buffer.concat([
+            new Buffer([MARSHAL_FLOAT]), ints.dump(str.length), new Buffer(str, 'utf8')
+          ]);
+        } else if(value === -Infinity) {
+          var str = '-inf';
+          return Buffer.concat([
+            new Buffer([MARSHAL_FLOAT]), ints.dump(str.length), new Buffer(str, 'utf8')
+          ]);
+        } else {
+          return Buffer.concat([
+            new Buffer([MARSHAL_INT]), ints.dump(value)
+          ]);
+        }
+      } else {
+        var str = value.toString();
+        return Buffer.concat([
+          new Buffer([MARSHAL_FLOAT]), ints.dump(str.length), new Buffer(str, 'utf8')
+        ]);
+      }
+    }
+
+    if(typeof value === 'string') {
+      return _ivar(MARSHAL_IVAR_STR, value);
+    }
+
+    if(Array.isArray(value)) {
+      return Buffer.concat(
+        [ new Buffer([MARSHAL_ARRAY]),
+          ints.dump(value.length)
+        ].concat(
+          value.map(function(item) {
+            return _dumpValue(item);
+          })
+        )
+      );
+    }
+
+    return new Buffer([MARSHAL_NULL]);
+  };
+
+  return _dumpValue(value);
 };
 
 module.exports = {
@@ -94,7 +174,7 @@ module.exports = {
   },
   dump: function(input, encoding) {
     var buffer = new Buffer('0408', 'hex');
-    buffer = Buffer.concat([buffer, _dumpValue(input)]);
+    buffer = Buffer.concat([buffer, _dump(input)]);
     if(encoding) {
       return buffer.toString(encoding);
     }

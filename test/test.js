@@ -19,7 +19,17 @@ describe('marsha', function() {
     it('throws an exception if given a string with no encoding', function() {
       assert.throws(function() {
         marsha.load('BAhU');
-      }, /A second "encoding" argument is expected if the first argument is not a buffer/i, 'input with invalid leading bytes should throw')
+      }, /A second "encoding" argument is expected if the first argument is not a buffer/i, 'string input with no encoding should throw');
+    });
+
+    it('parses Infinity', function() {
+      var buffer = new Buffer('04086608696e66', 'hex');
+      assert.strictEqual(marsha.load(buffer), Infinity);
+    });
+
+    it('parses -Infinity', function() {
+      var buffer = new Buffer('040866092d696e66', 'hex');
+      assert.strictEqual(marsha.load(buffer), -Infinity);
     });
 
     Object.keys(cases).forEach(function(hex) {
@@ -46,6 +56,16 @@ describe('marsha', function() {
       assert.strictEqual(marsha.dump(true, 'base64'), 'BAhU');
     });
 
+    it('outputs Infinity', function() {
+      var buffer = marsha.dump(Infinity);
+      assert.equal(buffer.toString('hex'), '04086608696e66');
+    });
+
+    it('outputs -Infinity', function() {
+      var buffer = marsha.dump(-Infinity);
+      assert.equal(buffer.toString('hex'), '040866092d696e66');
+    });
+
     Object.keys(cases).forEach(function(hex) {
       it('serializes ' + JSON.stringify(cases[hex]) + ' to ' + hex, function() {
         var buffer = marsha.dump(cases[hex]);
@@ -54,8 +74,9 @@ describe('marsha', function() {
     });
 
     complexCases.forEach(function(testCase) {
-      xit('serializes ' + JSON.stringify(testCase.node) + ' to ' + testCase.rbout, function() {
-        
+      it('serializes ' + JSON.stringify(testCase.node) + ' to ' + testCase.rbout, function() {
+        var buffer = marsha.dump(testCase.node);
+        assert.equal(buffer.toString('hex'), testCase.rbout);
       });
     });
   });
