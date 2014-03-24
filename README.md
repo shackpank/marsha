@@ -5,7 +5,7 @@ Read/write simple output from Ruby's [Marshal](http://ruby-doc.org/core-2.1.1/Ma
 
 ### How simple? I serialize everything with Marshal.dump and want to use it to interop with other langs for some reason
 
-This is not for you. First of all, don't use Marshal for that. And second of all, no smoking.
+This is not for you. First of all, don't use Marshal for that. And second of all, [no smoking](http://www.imdb.com/title/tt0187664/).
 
 ![FUUUUCK OFFFF](http://i.imgur.com/gmsDzNb.jpg)
 
