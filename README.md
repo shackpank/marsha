@@ -9,7 +9,7 @@ This is not for you. First of all, don't use Marshal for that. And second of all
 
 ![FUUUUCK OFFFF](http://i.imgur.com/gmsDzNb.jpg)
 
-###I want to exchange data with Ruby/Rails apps that store simple values in encoded Marshaled data
+### I want to exchange data with Ruby/Rails apps that store simple values in Marshal format
 
 Now we're talking.
 
@@ -35,7 +35,7 @@ Or you can provide a string and an encoding, a buffer will be created internally
 marsha.load('BAhbCGkGaQdpCA==', 'base64'); // returns [ 1, 2, 3 ]
 ```
 
-The JS representation of the marshaled data will be returned, or an exception will be thrown if it's not usable. Marshal can serialize a wide variety of Ruby objects including instances of builtin and user defined classes, which may not have a JS equivalent. `:symbol`s are treated as strings.
+The JS representation of the marshaled data will be returned, or an exception will be thrown if it's not usable. Marshal can serialize a wide variety of Ruby objects including instances of builtin and user defined classes, which may not have a JS equivalent. `:symbol`s are treated as strings in JS land.
 
 Writing is similar to reading, returns a buffer if called with one argument:
 
@@ -46,10 +46,10 @@ marsha.dump([ 1, 2, 3 ]); // returns <Buffer 04 08 5b 08 69 06 69 07 69 08>
 or a string if called with two:
 
 ```javascript
-marsha.dump([ 1, 2, 3 ]); // returns 'BAhbCGkGaQdpCA=='
+marsha.dump([ 1, 2, 3 ], 'base64'); // returns 'BAhbCGkGaQdpCA=='
 ```
 
-=== Tests
+### Tests
 
 ```shell
 npm test
