@@ -1,12 +1,12 @@
 {
   "name": "marsha",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Parser/serializer for Ruby's marshal format",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha"
   },
-  "repository": "",
+  "repository": "http://github.com/shackpank/marsha",
   "keywords": [
     "marshal",
     "ruby",
@@ -16,6 +16,6 @@
   "devDependencies": {
     "mocha": "1.18.2"
   },
-  "author": "Ollie Buck",
+  "author": "Ollie Buck <ollie@olliebuck.com>",
   "license": "BSD"
 }
