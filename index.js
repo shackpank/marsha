@@ -2,6 +2,7 @@ var MARSHAL_TRUE = 'T'.charCodeAt(0);
 var MARSHAL_FALSE = 'F'.charCodeAt(0);
 var MARSHAL_NULL = '0'.charCodeAt(0);
 var MARSHAL_ARRAY = '['.charCodeAt(0);
+var MARSHAL_HASH = '{'.charCodeAt(0);
 var MARSHAL_INT = 'i'.charCodeAt(0);
 var MARSHAL_SYM = ':'.charCodeAt(0);
 var MARSHAL_SYM_REF = ';'.charCodeAt(0);
@@ -57,9 +58,21 @@ var _parse = function(buffer) {
           case MARSHAL_IVAR_STR:
             var length = ints.load(buffer.slice(offset + 2, offset + 3));
             var tempBuf = buffer.slice(offset + 3, offset + 3 + length);
+            // Move offset forward by the string length, plus the
+            // I, " and byte indicating string length
+            offset += tempBuf.length + 3;
+            if(buffer[offset + 1] === MARSHAL_SYM) {
+              // This is the encoding of the string. We're ignoring it, but
+              // need to fast-forward past the number of bytes it takes up
+              offset += 5;
+            } else if(buffer[offset + 1] === MARSHAL_SYM_REF) {
+              offset += 4;
+            } else {
+              throw new Error('String not terminated with encoding symbol (expected 3a or 3b, got ' + buffer[offset + 1].toString(16) + '), not sure what to do');
+            }
             return tempBuf.toString('utf8');
           default:
-            throw new Error('Encountered some weird shit, bailing');
+            throw new Error('Unrecognised instance variable type (instance variables currently can only be strings)');
         }
         throw new Error(ivarType);
       case MARSHAL_ARRAY:
@@ -70,8 +83,19 @@ var _parse = function(buffer) {
           elements.push(_identifyNextToken());
         }
         return elements;
+      case MARSHAL_HASH:
+        var tokensExpected = ints.load(buffer.slice(offset + 1, offset + 2)) * 2;
+        var hashOut = {};
+        offset += 2;
+        for(var i = 0; i < tokensExpected; i += 2) {
+          var key = _identifyNextToken();
+          var val = _identifyNextToken();
+          hashOut[key] = val;
+        }
+        return hashOut;
+        break;
       default:
-        throw new Error('Unexpected item in bagging area, offset ' + offset + ' on ' + buffer);
+        throw new Error('Unexpected data, value ' + buffer[offset] + ' at offset ' + offset + ' on ' + buffer.toString('hex') + '. Parsing this sort of data is probably not yet implemented!');
     }
 
     return output;
@@ -146,6 +170,18 @@ var _dump = function(value) {
           value.map(function(item) {
             return _dumpValue(item);
           })
+        )
+      );
+    }
+
+    if(value === Object(value)) {
+      return Buffer.concat(
+        [ new Buffer([MARSHAL_HASH]),
+          ints.dump(Object.keys(value).length)
+        ].concat(
+          [].concat.apply([], Object.keys(value).map(function(key) {
+            return [ _dumpValue(key), _dumpValue(value[key]) ];
+          }))
         )
       );
     }

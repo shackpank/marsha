@@ -13,7 +13,7 @@ This is not for you. First of all, don't use Marshal for that. And second of all
 
 Now we're talking.
 
-I've done basics like true, false and nil, Fixnums, Floats, strings that just contain ASCII/latin1 chars, and Arrays. Next up is hashes.
+I've done basics like true, false and nil, Fixnums, Floats, strings that just contain ASCII/latin1 chars, arrays and hashes. Coverage of what _can_ be serialized is far from exhaustive.
 
 ### OK, That Suits My Needs
 
