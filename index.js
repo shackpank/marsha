@@ -19,6 +19,31 @@ var _parse = function(buffer) {
   var _identifyNextToken = function() {
     var output;
 
+    var _parseString = function() {
+      var length = ints.load(buffer.slice(offset + 2, offset + 3));
+      // If the string is not an ivar there's one less character to
+      // move on by.
+      var isIvar = buffer[offset + 1] === 34;
+      var offsetFastForward = isIvar ? 3 : 2;
+      var tempBuf = buffer.slice(offset + offsetFastForward, offset + offsetFastForward + length);
+      // Move offset forward by the string length, plus the
+      // I, " and byte indicating string length
+      offset += tempBuf.length + 3;
+      if(buffer[offset + 1] === MARSHAL_SYM) {
+        // This is the encoding of the string. We're ignoring it, but
+        // need to fast-forward past the number of bytes it takes up
+        offset += 5;
+      } else if(buffer[offset + 1] === MARSHAL_SYM_REF) {
+        offset += 4;
+      } else if(buffer[offset + 1] === undefined) {
+        // If the string runs to the end of the payload we don't need the
+        // terminating symbol.
+      } else {
+        throw new Error('String not terminated with encoding symbol (expected 3a or 3b, got ' + buffer[offset + 1].toString(16) + '), not sure what to do');
+      }
+      return tempBuf.toString('utf8');
+    };
+
     switch(buffer[offset]) {
       case MARSHAL_TRUE:
         offset += 1;
@@ -52,25 +77,13 @@ var _parse = function(buffer) {
         var index = ints.load(buffer.slice(offset + 1, offset + 2));
         offset += 2;
         return symbols[index];
+      case MARSHAL_IVAR_STR:
+        return _parseString();
       case MARSHAL_INSTANCEVAR:
         var ivarType = buffer[offset + 1];
         switch(ivarType) {
           case MARSHAL_IVAR_STR:
-            var length = ints.load(buffer.slice(offset + 2, offset + 3));
-            var tempBuf = buffer.slice(offset + 3, offset + 3 + length);
-            // Move offset forward by the string length, plus the
-            // I, " and byte indicating string length
-            offset += tempBuf.length + 3;
-            if(buffer[offset + 1] === MARSHAL_SYM) {
-              // This is the encoding of the string. We're ignoring it, but
-              // need to fast-forward past the number of bytes it takes up
-              offset += 5;
-            } else if(buffer[offset + 1] === MARSHAL_SYM_REF) {
-              offset += 4;
-            } else {
-              throw new Error('String not terminated with encoding symbol (expected 3a or 3b, got ' + buffer[offset + 1].toString(16) + '), not sure what to do');
-            }
-            return tempBuf.toString('utf8');
+            return _parseString();
           default:
             throw new Error('Unrecognised instance variable type (instance variables currently can only be strings)');
         }
