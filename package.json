@@ -1,6 +1,6 @@
 {
   "name": "marsha",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Parser/serializer for Ruby's marshal format",
   "main": "index.js",
   "scripts": {
