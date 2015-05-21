@@ -95,7 +95,7 @@ var _parse = function(buffer) {
         return hashOut;
         break;
       default:
-        throw new Error('Unexpected data, value ' + buffer[offset] + ' at offset ' + offset + ' on ' + buffer.toString('hex') + '. Parsing this sort of data is probably not yet implemented!');
+        throw new Error('Unexpected data, value ' + buffer[offset].toString(16) + ' at offset ' + offset + ' on ' + buffer.toString('hex') + '. Parsing this sort of data is probably not yet implemented!');
     }
 
     return output;
