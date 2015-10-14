@@ -1,6 +1,7 @@
 var marsha = require('../');
 var assert = require('assert');
 var fs = require('fs');
+var bigInt = require('big-integer');
 var cases = JSON.parse(fs.readFileSync('./test/bidirectional_examples.json'));
 var complexCases = JSON.parse(fs.readFileSync('./test/other_examples.json'));
 
@@ -30,6 +31,16 @@ describe('marsha', function() {
     it('parses -Infinity', function() {
       var buffer = new Buffer('040866092d696e66', 'hex');
       assert.strictEqual(marsha.load(buffer), -Infinity);
+    });
+
+    it('parses Bignum', function() {
+      var buffer = new Buffer('04086c2b0968a0bf5909934051', 'hex');
+      assert.ok(marsha.load(buffer).equals(bigInt("5854841183951364200")));
+    });
+
+    it('parses negative Bignum', function() {
+      var buffer = new Buffer('04086c2d09fcecf6f9944a2b6a', 'hex');
+      assert.ok(marsha.load(buffer).equals(bigInt("-7650290395728243964")));
     });
 
     Object.keys(cases).forEach(function(hex) {
@@ -64,6 +75,16 @@ describe('marsha', function() {
     it('outputs -Infinity', function() {
       var buffer = marsha.dump(-Infinity);
       assert.equal(buffer.toString('hex'), '040866092d696e66');
+    });
+
+    xit('outputs Bignum', function() {
+      var buffer = marsha.dump(bigInt("5854841183951364200"));
+      assert.equal(buffer.toString('hex'), '04086c2b0968a0bf5909934051');
+    });
+
+    xit('outputs negative Bignum', function() {
+      var buffer = marsha.dump(bigInt("-7650290395728243964"));
+      assert.equal(buffer.toString('hex'), '04086c2d09fcecf6f9944a2b6a');
     });
 
     Object.keys(cases).forEach(function(hex) {
