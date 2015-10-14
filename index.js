@@ -115,6 +115,7 @@ var _parse = function(buffer) {
         var bignum = bigInt.zero;
         for(var i = 0; i < length; i ++) {
           bignum = bignum.add(bigInt(buffer[offset + i]).multiply(bigInt(2).pow(i * 8)))
+          offset ++
         }
         return bignum.multiply(sign)
       default:
