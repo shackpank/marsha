@@ -9,8 +9,10 @@ var MARSHAL_SYM_REF = ';'.charCodeAt(0);
 var MARSHAL_INSTANCEVAR = 'I'.charCodeAt(0);
 var MARSHAL_IVAR_STR = '"'.charCodeAt(0);
 var MARSHAL_FLOAT = 'f'.charCodeAt(0);
+var MARSHAL_BIGNUM = 'l'.charCodeAt(0);
 
 var ints = require('./lib/ints');
+var bigInt = require('big-integer');
 
 var _parse = function(buffer) {
   var offset = 0;
@@ -106,7 +108,16 @@ var _parse = function(buffer) {
           hashOut[key] = val;
         }
         return hashOut;
-        break;
+      case MARSHAL_BIGNUM:
+        var sign = buffer[offset + 1] == 43 ? 1 : -1;
+        var length = ints.load(buffer.slice(offset + 2, offset + 3)) * 2;
+        offset += 3;
+        var bignum = bigInt.zero;
+        for(var i = 0; i < length; i ++) {
+          bignum = bignum.add(bigInt(buffer[offset + i]).multiply(bigInt(2).pow(i * 8)))
+          offset ++
+        }
+        return bignum.multiply(sign)
       default:
         throw new Error('Unexpected data, value ' + buffer[offset].toString(16) + ' at offset ' + offset + ' on ' + buffer.toString('hex') + '. Parsing this sort of data is probably not yet implemented!');
     }
@@ -185,6 +196,10 @@ var _dump = function(value) {
           })
         )
       );
+    }
+
+    if(bigInt.isInstance(value)) {
+      throw new Error('Bignum dump is not yet implemented')
     }
 
     if(value === Object(value)) {
